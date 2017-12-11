@@ -45,6 +45,7 @@ set /p plydmg=
 set /p mondmg=
 set /p monhp=
 set /p monpois=
+set /p resistance=
 )
 cls
 echo Game Loaded
@@ -82,15 +83,29 @@ set plydmg=7
 set mondmg=3
 set monhp=50
 set monpois=2
+set resistance=0
 goto fight
 
 :fight
 cls
+
+
+if %hp% GTR %hpmax% set hp= %hpmax%
+
+
+if %money% LSS 0 set money= 0
+
+
+if %xp% GEQ %xpmax% set /a xp= %xp% - %xpmax%
+if %xp% GEQ %xpmax% set /a lvl= %lvl% + 1
+if %xp% GEQ %xpmax% set /a xpmax= %xpmax% + 2
+
 echo Wizard People!
 echo --------------------------
 echo %na% Money: %money%
 echo Xp: %xp%/%xpmax% Lvl: %lvl%
-echo Weapon: %wepdis% Armor: %armdis%
+echo Weapon: %wepdis% 
+echo Armor: %armdis%
 echo Monster Damage: %mondmg%
 echo Damage: %plydmg%
 echo Health Potions: %hpots%
@@ -111,6 +126,122 @@ if %input% == 3 goto save
 if %input% == 4 exit
 goto fight
 
+:playerAttack
+if %hp% GTR %hpmax% set hp= %hpmax%
+if %monhp% LEQ 0 goto wingame
+if %hp% LEQ 0 goto loose
+
+title Sorry for the pause!
+cls
+echo Stats
+echo ----------------------
+echo Money: %money%
+echo Damage: %plydmg%
+echo Monster Damage: %mondmg%
+echo Health Potions: %hpots%
+echo Monster Poison: %monpois%
+echo Health: %hp%/%hpmax%
+echo Monster Health: %monhp%
+echo ----------------------
+echo 1) Use %wepdis%
+echo 2) Use Monster Poison
+echo 3) Use Health Potions
+echo 4) Flee ($50)
+echo ----------------------
+set /p input=Number: 
+
+if %input% == 1 goto playerAttakFaze
+if %input% == 2 goto useMonPois
+if %input% == 3 goto useHpots
+if %input% == 4 goto flee
+goto playerAttack
+
+:flee
+if %money% LSS 50 goto noFundsAttack
+set /a money= %money% - 50
+goto fight
+
+:noFundsAttack
+cls
+echo You do not have enough money to flee!
+pause
+goto playerAttack
+
+:useHpots
+if %hpots% LEQ 0 goto notEnoughHpots
+set /a hpots= %hpots% - 1
+if %hp% GEQ %hpmax% goto hpTooHighAttack
+set /a hp= %hp% + 15
+cls
+echo You used a health potion!
+goto playerAttack
+
+:hpTooHighAttack
+cls
+echo Your hp is too high!
+pause
+goto playerAttack
+
+:notEnoughHpots
+cls
+echo You do not have enough health potions!
+pause 
+goto playerAttack
+
+:useMonPois
+if %monpois% LEQ 0 goto notEnoughMonPois
+set /a monpois= %monpois% - 1
+set /a monhp= %monhp% - 7
+cls
+echo You used a monster poison!
+pause
+goto playerAttack
+
+:notEnoughMonPois
+cls
+echo You do not have enough monster poison!
+pause
+goto playerAttack
+
+:playerAttakFaze
+set /a monhp= %monhp% - %plydmg%
+echo You attacked the monster!
+pause
+goto monAttak
+
+:monAttak
+set /a hp= %hp% - %mondmg%
+echo The monster attacked you!
+pause 
+goto playerAttack
+
+:wingame
+set moyoge= %random%
+if %moyoge% GTR 50 goto wingame
+if %moyoge% LSS 20 goto wingame
+goto fz2ofwin
+
+:fz2ofwin
+set xpyoge= %random%
+if %xpyoge% GTR 50 goto fz2ofwin
+if %xpyoge% LSS 20 goto fz2ofwin
+cls
+echo You found $%moyoge%, and %xpyoge% Xp!
+pause
+
+::Money
+set /a money= %money% + %moyoge%
+::Xp
+set xp= %xp% + %xpyoge%
+if %xp% GEQ %xpmax% set /a xp= %xp% - %xpmax%
+if %xp% GEQ %xpmax% set /a lvl= %lvl% + 1
+set /a xpmax= %xpmax% + 2
+::Monster
+set /a mondmg= %mondmg% + 2
+set /a monhp= %monhp% + 2
+::goto
+goto fight
+
 :save
 (
 echo %na%
@@ -119,7 +250,6 @@ echo %xp%
 echo %xpmax%
 echo %money%
 echo %lvl%
-echo %wep%
 echo %wepdis%
 echo %arm%
 echo %armdis%
@@ -129,6 +259,7 @@ echo %plydmg%
 echo %mondmg%
 echo %monhp%
 echo %monpois%
+echo %resistance%
 ) > save.sav
 cls
 echo Game Saved!
@@ -144,7 +275,7 @@ echo 1) Weapons
 echo 2) Potions
 echo 3) Food
 echo 4) Armor
-echo 4) Back
+echo 5) Back
 echo.
 set /p input=Number: 
 
@@ -161,23 +292,22 @@ echo ----------------------------------
 echo Money: %money% Lvl: %lvl%
 echo ----------------------------------
 echo    Armor      Cost     Resistance
-echo 1) Leather    $50
-echo 2) Chain      $150
-echo 3) Gold       $300
-echo 4) Diamond    $500
-echo 5) Atomic     $1500
-echo 6) Space      $3000
+echo 1) Leather    $50      +2
+echo 2) Cain       $150     +3
+echo 3) Gold       $300     +5
+echo 4) Diamond    $500     +7
+echo 5) Atomic     $1500    +10
+echo 6) Space      $3000    +20
 echo 7) Back
 echo ----------------------------------
-set /p input=Number
+set /p input=Number: 
 
-if %input% == 1 goto purchase.leather.armor
-if %input% == 2 goto purchase.chain.armor
-if %input% == 3 goto purchase.gold.armor
-if %input% == 4 goto purchase.diamond.armor
-if %input% == 5 goto purchase.atomic.armor
-if %input% == 6 goto purchase.space.armor
-if %input% == 12365478963214785862793147896321478963214789632159632587410 goto purchase.easteregg.armor
+if %input% == 1 goto purchaseleatherarmor
+if %input% == 2 goto purchasechainarmor
+if %input% == 3 goto purchasegoldarmor
+if %input% == 4 goto purchasediamondarmor
+if %input% == 5 goto purchaseatomicarmor
+if %input% == 6 goto purchasespacearmor
 if %input% == 7 goto shop
 
 :buyPotions
@@ -201,6 +331,7 @@ if %input% == 4 goto buyMonsterPoison
 if %input% == 5 goto shop
 
 :buyMonsterPoison
+cls
 if %money% LSS 25 goto nofunds
 set /a money= %money% - 25
 set /a monpois= %monpois% + 1
@@ -209,6 +340,7 @@ pause
 goto buyPotions
 
 :buyLvl2
+cls
 if %money% LSS 1000 goto nofunds
 set /a money= %money% - 1000
 set /a lvl= %lvl% + 5
@@ -218,6 +350,7 @@ pause
 goto buyPotions
 
 :buyLvl
+cls
 if %money% LSS 500 goto nofunds
 set /a money= %money% - 500
 set /a lvl= %lvl% + 2
@@ -227,6 +360,7 @@ pause
 goto buyPotions
 
 :buyHpots
+cls
 if %money% LSS 5 goto nofunds
 set /a money= %money% - 5
 set /a hpots= %hpots% + 1
@@ -256,6 +390,7 @@ if %input% == 5 goto shop
 goto buyFood
 
 :purchasePatato
+cls
 if %money% LSS 2 goto nofunds
 if %hp% GEQ %hpmax% goto hpToHigh
 set /a money= %money% - 2
@@ -265,6 +400,7 @@ pause
 goto buyFood
 
 :purchaseSalad
+cls
 if %money% LSS 5 goto nofunds
 if %hp% GEQ %hpmax% goto hpToHigh
 set /a money= %money% - 5
@@ -274,6 +410,7 @@ pause
 goto buyFood
 
 :purchasePasta
+cls
 if %money% LSS 7 goto nofunds
 if %hp% GEQ %hpmax% goto hpToHigh
 set /a money= %money% - 7
@@ -283,6 +420,7 @@ pause
 goto buyFood
 
 :purchaseSteak
+cls
 if %money% LSS 15 goto nofunds
 if %hp% GEQ %hpmax% goto hpToHigh
 set /a money= %money% - 15
@@ -296,11 +434,11 @@ cls
 echo You can not buy this item
 echo because your hp is too high.
 pause
-goto buyFood
+goto shop
 
 :nofunds
 cls
 echo You do not have enough money to buy 
 echo this item.
 pause
-goto buyFood
+goto shop
