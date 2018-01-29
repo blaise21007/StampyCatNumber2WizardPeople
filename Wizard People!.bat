@@ -442,3 +442,9 @@ echo You do not have enough money to buy
 echo this item.
 pause
 goto shop
+
+:buyWeapons
+cls
+echo There is no weapons added.
+pause
+goto fight
